@@ -1,96 +1,137 @@
 # -*- coding: utf-8 -*-
-import cv2
+"""
+Module de chargement, traitement et redimensionnement d'images.
+Prend en charge nativement les formats HEIC issus de smartphones Apple.
+"""
 import os
+import cv2
+import numpy as np
 from PIL import Image
 import pillow_heif
-import numpy as np
+from modules.utils import valider_chemin
 
 def charger_image_heic_ou_standard(chemin_fichier):
     """
-    Charge une image en prenant en charge le format HEIC.
-    Input:
+    Charge une image à partir de son chemin de fichier en prenant en charge le format HEIC.
+    Si l'image est un HEIC (iPhone), elle est convertie pour être compatible avec OpenCV.
+
+    Input :
+    -------
     chemin_fichier : str
-    Output:
-    numpy.ndarray (image) ou None :
-        L'image chargée au format OpenCV (BGR) prête à être affichée ou traitée.
-        Renvoie None si le fichier n'existe pas ou ne peut pas être lu.
+        Le chemin d'accès complet vers l'image à charger.
+
+    Output :
+    --------
+    numpy.ndarray ou None :
+        L'image chargée au format OpenCV (BGR) prête à être affichée.
+        Renvoie None si l'image n'est pas lisible.
     """
+    if not valider_chemin(chemin_fichier, "Fichier image"):
+        return None
+
     if chemin_fichier.lower().endswith('.heic'):
-        heif_file = pillow_heif.read_heif(chemin_fichier)
-        image_pil = Image.frombytes(
-            heif_file.mode, heif_file.size, heif_file.data, 
-            "raw", heif_file.mode, heif_file.stride
-        )
-        return cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+        try:
+            heif_file = pillow_heif.read_heif(chemin_fichier)
+            image_pil = Image.frombytes(
+                heif_file.mode, heif_file.size, heif_file.data, 
+                "raw", heif_file.mode, heif_file.stride
+            )
+            return cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+        except Exception as e:
+            print(f"[ERREUR] Échec de décodage du fichier HEIC : {e}")
+            return None
+            
     return cv2.imread(chemin_fichier)
-
-
 
 
 def preparer_photo_velo(racine_drive, candidat):
     """
-    Vérifie les dossiers du Drive pour le vélo, trouve le fichier 
-    et charge l'image originale.
-    Retourne l'image OpenCV ou None si une erreur survient.
-    Input:
-    chemin_fichier : str
-    Numéro de candidat : str
-    Output:
+    Localise le dossier vélo d'un candidat et charge l'image haute définition correspondante.
 
+    Input :
+    -------
+    racine_drive : str
+        Chemin d'accès racine vers le dossier de données.
+    candidat : str
+        Code unique du candidat (ex: "WR00").
+
+    Output :
+    --------
+    numpy.ndarray ou None :
+        Image OpenCV du vélo ou None si manquante.
     """
-    # 1. Reconstruction du chemin exact
-    chemin_candidat_images = os.path.join(racine_drive, candidat, "photo")
-    chemin_dossier_velo = os.path.join(chemin_candidat_images, "velo")
+    chemin_dossier_velo = os.path.join(racine_drive, candidat, "photo", "velo")
     
-    # 2. Sécurité : Vérification du dossier
-    if not os.path.exists(chemin_dossier_velo):
-        print(f"\n[ERREUR] Le dossier n'existe pas sur votre Drive : {chemin_dossier_velo}")
+    if not valider_chemin(chemin_dossier_velo, f"Dossier vélo pour {candidat}"):
         return None
 
-    # 3. Recherche du fichier image (.jpg, .png, .heic)
     fichiers = [f for f in os.listdir(chemin_dossier_velo) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.heic'))]
     if not fichiers:
-        print(f"[ERREUR] Aucune image trouvée dans le dossier : {chemin_dossier_velo}")
+        print(f"[ERREUR] Aucune image trouvée dans le dossier vélo : {chemin_dossier_velo}")
         return None
         
     photo_velo = os.path.join(chemin_dossier_velo, fichiers[0])
-    print(f"[INFO] Ouverture de l'image vélo : {fichiers[0]}")
-
-    # 4. Chargement et retour de l'image
+    print(f"[INFO] Image trouvée : {fichiers[0]}")
     return charger_image_heic_ou_standard(photo_velo)
+
+
+def lister_photos_cycliste_par_dossier(racine_drive, candidat, position_dossier):
+    """
+    Récupère la liste triée des chemins absolus des 3 photos d'une position donnée (ex: pos_0_deg).
+
+    Input :
+    -------
+    racine_drive : str
+        Chemin d'accès racine vers le dossier de données.
+    candidat : str
+        Code unique du candidat (ex: "WR00").
+    position_dossier : str
+        Nom du sous-dossier de position (ex: "pos_0_deg").
+
+    Output :
+    --------
+    list :
+        Liste contenant exactement les chemins d'accès absolus vers les 3 photos du test.
+    """
+    chemin_position = os.path.join(racine_drive, candidat, "photo", position_dossier)
+    
+    if not valider_chemin(chemin_position, f"Dossier {position_dossier} pour {candidat}"):
+        return []
+
+    fichiers = [
+        os.path.join(chemin_position, f) for f in os.listdir(chemin_position) 
+        if f.lower().endswith(('.jpg', '.jpeg', '.png', '.heic'))
+    ]
+    
+    # Tri alphabétique pour s'assurer d'attribuer dans l'ordre de prise de vue (Test 1, Test 2, Test 3)
+    fichiers.sort()
+    return fichiers
 
 
 def adapter_image_a_ecran(image_originale, largeur_max_affichage=1024):
     """
-    Calcule le ratio et redimensionne l'image pour qu'elle s'affiche 
-    entièrement sur l'écran sans déborder.
-    Retourne : (image_affichage, facteur_zoom)
+    Calcule le ratio de réduction et génère une image d'affichage adaptée à l'écran.
+
+    Input :
+    -------
+    image_originale : numpy.ndarray
+        Image haute résolution originale.
+    largeur_max_affichage : int
+        Largeur de confort pour l'affichage écran.
+
+    Output :
+    --------
+    tuple :
+        (image_affichage (numpy.ndarray), facteur_zoom (float))
     """
     hauteur_origine, largeur_origine = image_originale.shape[:2]
-    
+   
     if largeur_origine > largeur_max_affichage:
         facteur_zoom = largeur_max_affichage / largeur_origine
         nouvelle_hauteur = int(hauteur_origine * facteur_zoom)
         image_affichage = cv2.resize(image_originale, (largeur_max_affichage, nouvelle_hauteur))
-        print(f"[INFO] Image adaptée à l'écran : {largeur_max_affichage}x{nouvelle_hauteur} (Ratio: {facteur_zoom:.2f})")
     else:
         image_affichage = image_originale.copy()
         facteur_zoom = 1.0
-        
+       
     return image_affichage, facteur_zoom
-
-
-def lancer_fenetre_pointage(nom_fenetre, image_a_afficher, fonction_clic, fonction_maj_consigne):
-    """
-     Gère la boucle d'affichage OpenCV pour le pointage des gommettes.
-    """
-    cv2.namedWindow(nom_fenetre)
-    cv2.setMouseCallback(nom_fenetre, fonction_clic)
-        
-    fonction_maj_consigne()
-        
-    while True:
-        cv2.imshow(nom_fenetre, image_a_afficher)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-cv2.destroyAllWindows()
