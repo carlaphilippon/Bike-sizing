@@ -97,6 +97,19 @@ def lancer_pointage_velo(image_base, zoom_manager, distance_roues_mm):
     if "Roue_Arriere" in calibration and "Roue_Avant" in calibration:
         dist_px = calculer_distance_pixels(calibration["Roue_Arriere"], calibration["Roue_Avant"])
         pixel_par_mm = dist_px / distance_roues_mm
+        
+        # ---> CORRECTION : On réinjecte les roues avec l'orthographe EXACTE du fichier configuration.py
+        coords_pixels["Roue arrière"] = calibration["Roue_Arriere"]
+        coords_pixels["Roue avant"] = calibration["Roue_Avant"]
+        # ------------------------------------------------------------------------------------------
+
+        return coords_pixels, pixel_par_mm
+        
+    return None, None
+    
+    if "Roue_Arriere" in calibration and "Roue_Avant" in calibration:
+        dist_px = calculer_distance_pixels(calibration["Roue_Arriere"], calibration["Roue_Avant"])
+        pixel_par_mm = dist_px / distance_roues_mm
         return coords_pixels, pixel_par_mm
         
     return None, None
@@ -122,7 +135,7 @@ def lancer_pointage_cycliste(image_base, zoom_manager, position_dossier, numero_
                 txt, col = "FIN PHOTO - Appuyez sur 'q' pour valider", (0, 255, 0)
             cv2.putText(img_temp, txt, (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.5, col, 2)
             
-        cv2.putText(img_temp, "[Z] Zoomer | [D] Dezoomer | [Echap] Quitter", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(img_temp, "Pour la photo du velo un clic droit avant de commencer \\[Z] Zoomer | [D] Dezoomer ", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
 
     def gestion_souris(event, x, y, flags, param):
         nonlocal attente_clic_zoom

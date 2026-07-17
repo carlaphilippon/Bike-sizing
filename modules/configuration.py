@@ -45,20 +45,20 @@ INDEX_POINTS_ANATOMIQUES = {
 COLONNES_TESTS = {
     1: {  # Test 1 (P à DB)
         "pos_0_deg": "Q",    # Pied X en Q, Y en R
-        "pos_90_deg": "AM",  # Pied X en AM, Y en AN
-        "pos_180_deg": "BI", # Pied X en BI, Y en BJ
-        "pos_270_deg": "CF"  # Pied X en CF, Y en CG
+        "pos_90_deg": "AN",  # Pied X en AM, Y en AN
+        "pos_180_deg": "BK", # Pied X en BI, Y en BJ
+        "pos_270_deg": "CH"  # Pied X en CF, Y en CG
     },
     2: {  # Test 2 (DE à GQ)
-        "pos_0_deg": "DF",   # Pied X en DF, Y en DG
-        "pos_90_deg": "EB",
-        "pos_180_deg": "EX",
-        "pos_270_deg": "FU"
+        "pos_0_deg": "DH",   # Pied X en DF, Y en DG
+        "pos_90_deg": "EE",
+        "pos_180_deg": "FB",
+        "pos_270_deg": "FY"
     },
     3: {  # Test 3 (GU à KG)
-        "pos_0_deg": "GV",   # Pied X en GV, Y en GW
-        "pos_90_deg": "HR",
-        "pos_180_deg": "IN",
-        "pos_270_deg": "JK"
+        "pos_0_deg": "GZ",   # Pied X en GV, Y en GW
+        "pos_90_deg": "HW",
+        "pos_180_deg": "IT",
+        "pos_270_deg": "JR "
     }
 }
