@@ -59,6 +59,6 @@ COLONNES_TESTS = {
         "pos_0_deg": "GZ",   # Pied X en GV, Y en GW
         "pos_90_deg": "HW",
         "pos_180_deg": "IT",
-        "pos_270_deg": "JR "
+        "pos_270_deg": "JR"
     }
 }
